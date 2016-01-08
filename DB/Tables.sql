@@ -49,27 +49,28 @@ CREATE TABLE Languages (
 
 --contains lists of user accounts with some additional info
 CREATE TABLE UserAimAccount (
-    UAAIID       SERIAL PRIMARY KEY,
+    UAAIID       BIGSERIAL PRIMARY KEY,
     Login        varchar(100) NOT NULL, 
     FirstName    varchar(40),
     LastName     varchar(40),
     Email        varchar(40) NOT NULL,
-    BirthDate    time,
-    AutoFill     bit,
-    Gender       bit,  
-    UpdateDate   time,
-    LastUpdate   time,
-    SleepTime    time,
-    WakeUp       time,
+    BirthDate    timestamp ,
+    AutoFill     boolean,
+    Gender       boolean,  
+    UpdateDate   timestamp ,
+    LastLogin    timestamp ,
+	LastChangeTimeUTC timestamp ,
+    SleepTime    timestamp ,
+    WakeUp       timestamp ,
     TasksPerDay  smallint,
     RestDays     smallint,
-    CreationDate time,
+    CreationDate timestamp ,
     StatusID     integer REFERENCES Status (StatusID) ON DELETE RESTRICT,
     LanguageID   integer REFERENCES Languages (LanguageID) ON DELETE RESTRICT,
     Settings     json,
     PassHash     varchar(500),
     Token        varchar(500),
-    TokenLives   time
+    TokenLives   timestamp 
 );
 
 --information about task types
@@ -98,7 +99,7 @@ VALUES
 
 --Folders contains folder structure (level- position in tree(def=0))
 CREATE TABLE Folders (
-    FolderID     SERIAL PRIMARY KEY,
+    FolderID     BIGSERIAL PRIMARY KEY,
     UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
     Level        smallint,
     ParentID     bigint,
@@ -107,7 +108,7 @@ CREATE TABLE Folders (
 
 --Tags per user
 CREATE TABLE Tags (
-    TagID        SERIAL PRIMARY KEY,
+    TagID        BIGSERIAL PRIMARY KEY,
     UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
     UsedTimes    bigint,
     Name         varchar(60) NOT NULL,
@@ -115,14 +116,14 @@ CREATE TABLE Tags (
 );
 
 --Tasks contains all tasks info (Tries - number tries to manage with task, Complexity - supressed (1-3), 
---Priority - position in backlog, Reminder - Remind if task was not done, Times - how many times repeat this task
+--Priority - position in backlog, Reminder - Remind if task was not done, Times - how many times repeat this task, IgnoreRest close if was missed
 CREATE TABLE Tasks (
-    TaskID       SERIAL PRIMARY KEY,
+    TaskID       BIGSERIAL PRIMARY KEY,
     UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
     Summary      varchar(200) NOT NULL, 
     Description  varchar, 
     Attachment   varchar(500),
-    NotificationTime time,
+    NotificationTime timestamp ,
     Complexity   smallint,
     Priority     bigint,
     Reminder     bit,  
@@ -130,42 +131,42 @@ CREATE TABLE Tasks (
     TaskDays     smallint,
     Times        smallint,
     TimesDone    smallint,
-    AddressedDate time,
-    UpdateDate   time,
-    CreationDate time,
+    AddressedDate timestamp ,
+    UpdateDate   timestamp ,
+    CreationDate timestamp ,
     Tries        smallint,
     StatusID     integer REFERENCES Status (StatusID) ON DELETE RESTRICT,
-    FolderID     integer REFERENCES Folders (FolderID) ON DELETE RESTRICT,   
+    FolderID     bigint REFERENCES Folders (FolderID) ON DELETE RESTRICT,   
     TypeID       integer REFERENCES TaskTypes (TypeID) ON DELETE RESTRICT,  
     IgnoreRest   bit
 );
 
 --contains information for 1 day (ChangesMade-one of tasks was changed),
 CREATE TABLE Sprint (
-    SprintID     SERIAL PRIMARY KEY,
+    SprintID     BIGSERIAL PRIMARY KEY,
     Day          date,
     UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
     TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
     ChangesMade  bit, 
     StatusID     integer REFERENCES Status (StatusID) ON DELETE RESTRICT,
-    UpdateDate   time,
+    UpdateDate   timestamp ,
     UNIQUE (TaskID, UAAIID)
 );
 
 --tag per task mapping
 CREATE TABLE MapTag (
-    MTID         SERIAL PRIMARY KEY,
+    MTID         BIGSERIAL PRIMARY KEY,
     UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
     TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
     TagID        integer REFERENCES Tags (TagID) ON DELETE RESTRICT,
     UNIQUE (TaskID, TagID, UAAIID)
 );
 
---Time range for tasks
+--timestamp  range for tasks
 CREATE TABLE Range (
-    RangeID      SERIAL PRIMARY KEY,
-    FromTime     time,
-    ToTime       time,
+    RangeID      BIGSERIAL PRIMARY KEY,
+    FromTime     timestamp ,
+    ToTime       timestamp ,
     TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
     UNIQUE (TaskID)
 );
@@ -197,7 +198,7 @@ CREATE TABLE Requests (
     RTypeID      integer REFERENCES RequestTypes (RTypeID) ON DELETE RESTRICT,
     StatusID     integer REFERENCES Status (StatusID) ON DELETE RESTRICT,
     AppID        bigint REFERENCES Applications (AppID) ON DELETE RESTRICT,
-    UpdateDate   time,
+    UpdateDate   timestamp ,
     FrequencyMS  bigint NOT NULL
 );
 
