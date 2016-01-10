@@ -100,26 +100,26 @@ VALUES
 --Folders contains folder structure (level- position in tree(def=0))
 CREATE TABLE Folders (
     FolderID     BIGSERIAL PRIMARY KEY,
-    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
+    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT NOT NULL,
     Level        smallint,
     ParentID     bigint,
-    Name         varchar(60) NOT NULL
+    Name         varchar(60) NOT NULL,
+	UNIQUE (UAAIID, Name, Level)
 );
 
 --Tags per user
 CREATE TABLE Tags (
     TagID        BIGSERIAL PRIMARY KEY,
-    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
-    UsedTimes    bigint,
+    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT NOT NULL,
     Name         varchar(60) NOT NULL,
-    UNIQUE (Name, UAAIID)
+    UNIQUE (UAAIID, Name)
 );
 
 --Tasks contains all tasks info (Tries - number tries to manage with task, Complexity - supressed (1-3), 
 --Priority - position in backlog, Reminder - Remind if task was not done, Times - how many times repeat this task, IgnoreRest close if was missed
 CREATE TABLE Tasks (
     TaskID       BIGSERIAL PRIMARY KEY,
-    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
+    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT NOT NULL,
     Summary      varchar(200) NOT NULL, 
     Description  varchar, 
     Attachment   varchar(500),
@@ -145,8 +145,8 @@ CREATE TABLE Tasks (
 CREATE TABLE Sprint (
     SprintID     BIGSERIAL PRIMARY KEY,
     Day          date,
-    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
-    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
+    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT NOT NULL,
+    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT NOT NULL,
     ChangesMade  bit, 
     StatusID     integer REFERENCES Status (StatusID) ON DELETE RESTRICT,
     UpdateDate   timestamp ,
@@ -156,9 +156,9 @@ CREATE TABLE Sprint (
 --tag per task mapping
 CREATE TABLE MapTag (
     MTID         BIGSERIAL PRIMARY KEY,
-    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT,
-    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
-    TagID        integer REFERENCES Tags (TagID) ON DELETE RESTRICT,
+    UAAIID       bigint REFERENCES UserAimAccount (UAAIID) ON DELETE RESTRICT NOT NULL,
+    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT NOT NULL,
+    TagID        integer REFERENCES Tags (TagID) ON DELETE RESTRICT NOT NULL,
     UNIQUE (TaskID, TagID, UAAIID)
 );
 
@@ -167,7 +167,7 @@ CREATE TABLE Range (
     RangeID      BIGSERIAL PRIMARY KEY,
     FromTime     timestamp ,
     ToTime       timestamp ,
-    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT,
+    TaskID       bigint REFERENCES Tasks (TaskID) ON DELETE RESTRICT NOT NULL,
     UNIQUE (TaskID)
 );
 
@@ -206,11 +206,14 @@ CREATE TABLE Requests (
 CREATE INDEX UserInd
 ON UserAimAccount (Login, UAAIID);
 CREATE INDEX TagInd
-ON Tags (UAAIID, TagID);
+ON Tags (UAAIID, name);
 CREATE INDEX FolderInd
 ON Folders (UAAIID, FolderID);
 CREATE INDEX TaskInd
 ON Tasks (UAAIID, StatusID, TaskID);
+
+rules
+statistic
 
 
 

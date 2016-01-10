@@ -205,7 +205,7 @@ LANGUAGE PLPGSQL;
 
 -- Get user logins - used for user account creation
 CREATE OR REPLACE FUNCTION GetLogins(
-    par_LoginTemplate varchar(100) DEFAULT NULL)
+    par_LoginTemplate varchar(101) DEFAULT NULL)
 RETURNS TABLE(r_Logins varchar(100)) AS $$
 DECLARE TempString    varchar(101);
 BEGIN
@@ -222,12 +222,12 @@ LANGUAGE PLPGSQL;
 CREATE OR REPLACE FUNCTION SetFolder(
     par_Login        varchar(100),
     FolderName       varchar(60),
-    ParentFolderiD   integer DEFAULT NULL,
-    id               integer DEFAULT NULL) 
+    ParentFolderiD   bigint DEFAULT NULL,
+    id               bigint DEFAULT NULL) 
 RETURNS varchar(40) AS $$
 DECLARE 
-	newfolderid integer;
-	i        integer; 
+	newfolderid bigint;
+	i        bigint; 
 	userid   bigint;
 	FolderLevel smallint;
 	ParentFolderLevel smallint;
@@ -275,6 +275,69 @@ BEGIN
 END; $$
 LANGUAGE PLPGSQL;
 
+-- Get list of user folders
+CREATE OR REPLACE FUNCTION GetFolders(
+    par_Login        varchar(100))
+RETURNS TABLE(r_FolderID  bigint,
+    r_Level        smallint,
+    r_ParentID     bigint,
+    r_Name         varchar(60)) AS $$
+BEGIN
+	RETURN QUERY SELECT FolderID, level, ParentID, Name FROM Folders WHERE UAAIID=(SELECT  UAAIID FROM UserAimAccount WHERE Login=par_Login);
+END; $$
+LANGUAGE PLPGSQL;
+
+-- Set tag for user
+CREATE OR REPLACE FUNCTION SetTag(
+    par_Login        varchar(100),
+    TagName          varchar(60),
+    id               bigint DEFAULT NULL) 
+RETURNS varchar(40) AS $$
+DECLARE userid   bigint;
+BEGIN
+	SELECT  UAAIID INTO userid FROM UserAimAccount WHERE Login=par_Login;
+	
+	IF (id IS NOT NULL) OR ((SELECT TagID FROM Tags WHERE UAAIID=userid AND name=TagName AND TagID=id) IS NOT NULL) THEN
+		UPDATE Tags
+		SET name=TagName
+		WHERE UAAIID=userid AND TagID=id
+		RETURNING TagID INTO id;
+		IF (id ISNULL) THEN
+			RETURN 'there is no such tag';
+		END IF;		
+		RETURN 'tag was updated';
+	ELSIF (SELECT TagID FROM Tags WHERE UAAIID=userid AND name=TagName) ISNULL THEN
+		INSERT INTO Tags (Name, UAAIID)
+		Values
+		(TagName, userid)
+		RETURNING TagID INTO id;
+		RETURN 'new tagid:' || id;
+	ELSE
+		RETURN 'such tag already exists';
+	END IF;	
+END; $$
+LANGUAGE PLPGSQL;
+
+-- Get tags
+CREATE OR REPLACE FUNCTION GetTags(
+    par_Login       varchar(100),
+    par_TagTemplate varchar(61) DEFAULT NULL)
+RETURNS TABLE(r_Tags varchar(60)) AS $$
+DECLARE 
+	TempString    varchar(101);
+	userid   bigint;
+BEGIN
+	SELECT  UAAIID INTO userid FROM UserAimAccount WHERE Login=par_Login;
+	
+	IF (par_TagTemplate != '') OR ((par_TagTemplate IS NOT NULL)) THEN
+		TempString := par_TagTemplate || '%';
+		RETURN QUERY SELECT  name as tags FROM Tags WHERE UAAIID=userid AND name LIKE TempString;
+	ELSE
+		RETURN QUERY SELECT  name as tags FROM Tags WHERE UAAIID=userid;
+	END IF;
+END; $$
+LANGUAGE PLPGSQL;
+
 select GetLanguagesList();
 select GetLanguage('en');
 select SetLoginData('adimas233357','1999-01-08 07:05:29','active','email');
@@ -284,6 +347,10 @@ select SetAccauntData('dimas23335','1999-01-08 07:05:32');
 select GetAccauntData('dimas23335')
 select GetLogins ('d')
 SELECT SetFolder ('dimas23335', 'HUINIA10',2)
+select GetFolders ('dimas23335')
+select SetTag ('adimas233357', 'tzag0')
+select GetTags ('adimas233357', '')
+
 
 
 
